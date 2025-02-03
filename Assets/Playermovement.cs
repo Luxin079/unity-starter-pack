@@ -9,6 +9,10 @@ public class Playermovement : MonoBehaviour
     public float speed = 12f;
     public float gravity = -9.81f;
     public float jumpheight = 3f;
+    public float superJumpHeight = 10f; // Hoogte van de super jump
+
+    public float superJumpCooldown = 5f; // Cooldown van 5 seconden
+    private float superJumpTimer = 0f; // Timer voor de super jump
 
     public Transform groundCheck;
     public float groundDistance;
@@ -19,18 +23,16 @@ public class Playermovement : MonoBehaviour
     public Animator _animator;
 
     // Dash variables
-    public float dashDistance = 8f; // Distance of the dash
-    public float dashCooldown = 3f; // Cooldown time in seconds
-    private float dashTimer = 0f; // Tracks time until next dash
+    public float dashDistance = 8f;
+    public float dashCooldown = 3f;
+    private float dashTimer = 0f;
 
     // Update is called once per frame
     void Update()
     {
-        // Update dash timer
-        if (dashTimer > 0)
-        {
-            dashTimer -= Time.deltaTime;
-        }
+        // Update timers
+        if (dashTimer > 0) dashTimer -= Time.deltaTime;
+        if (superJumpTimer > 0) superJumpTimer -= Time.deltaTime;
 
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
@@ -70,20 +72,25 @@ public class Playermovement : MonoBehaviour
         // Dash mechanic
         if (Input.GetKeyDown(KeyCode.LeftShift) && dashTimer <= 0 && move.magnitude > 0)
         {
-            // Normalize move direction to ensure consistent dash distance
             Vector3 dashDirection = move.normalized;
             controller.Move(dashDirection * dashDistance);
-            dashTimer = dashCooldown; // Reset cooldown timer
+            dashTimer = dashCooldown;
         }
 
-        // Jump when the space bar is held down and the player is grounded
+        // Normale jump
         if (Input.GetButton("Jump") && isGrounded)
         {
             velocity.y = Mathf.Sqrt(jumpheight * -2f * gravity);
         }
 
-        velocity.y += gravity * Time.deltaTime;
+        // Super Jump (Q Key) met cooldown
+        if (Input.GetKeyDown(KeyCode.Q) && isGrounded && superJumpTimer <= 0)
+        {
+            velocity.y = Mathf.Sqrt(superJumpHeight * -2f * gravity);
+            superJumpTimer = superJumpCooldown; // Reset de cooldown timer
+        }
 
+        velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
 }
